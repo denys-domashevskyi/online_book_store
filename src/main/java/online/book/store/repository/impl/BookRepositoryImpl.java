@@ -1,22 +1,21 @@
 package online.book.store.repository.impl;
 
+import jakarta.persistence.NoResultException;
 import java.util.List;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import online.book.store.model.Book;
 import online.book.store.repository.BookRepository;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
+@RequiredArgsConstructor
 @Repository
 public class BookRepositoryImpl implements BookRepository {
     private final SessionFactory sessionFactory;
-
-    @Autowired
-    public BookRepositoryImpl(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
-    }
 
     @Override
     public Book save(Book book) {
@@ -46,6 +45,21 @@ public class BookRepositoryImpl implements BookRepository {
             return session
                     .createQuery("FROM Book", Book.class)
                     .getResultList();
+        }
+    }
+
+    @Override
+    public Optional<Book> findById(Long id) {
+        try (Session session = sessionFactory.openSession()) {
+            Query<Book> query = session
+                    .createQuery("FROM Book b WHERE b.id = :id", Book.class);
+            query.setParameter("id", id);
+            try {
+                Book book = query.uniqueResult();
+                return Optional.of(book);
+            } catch (NoResultException ex) {
+                return Optional.empty();
+            }
         }
     }
 }
